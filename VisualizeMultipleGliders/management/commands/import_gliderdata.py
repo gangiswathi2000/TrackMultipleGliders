@@ -6,7 +6,6 @@ import os
 from datetime import datetime
 
 class Command(BaseCommand):
-    help = 'Imports multiple NetCDF glider data files into the database'
 
     def add_arguments(self, parser):
         parser.add_argument('files', nargs='+', type=str)
@@ -20,7 +19,8 @@ class Command(BaseCommand):
                 continue
 
             ds = xr.open_dataset(file_path)
-
+            glider_type= ds.attrs['platform_type']
+           
             glider_id = ds.attrs.get("id")
             dateCreated = ds.attrs.get("date_created")
             summary= ds.attrs.get("summary")
@@ -44,15 +44,19 @@ class Command(BaseCommand):
                     "endOfCoverage":endOfCoverage,                    
                 }
             )
-
-            # Convert to dataframe
+            if  glider_type=='Slocum Glider' and 'dissolved_oxygen' in ds:
+                oxygen_data=ds['dissolved_oxygen'].values
+            elif glider_type=='Seaglider' and 'oxygen' in ds:
+                oxygen_data=ds['oxygen'].values
+            else:
+                oxygen_data=None
             df = pd.DataFrame({
                 "latitude": ds['latitude'].values,
                 "longitude": ds['longitude'].values,
                 "depth": ds['depth'].values,
                 "temperature": ds['temperature'].values if 'temperature' in ds else None,
                 "salinity": ds['salinity'].values if 'salinity' in ds else None,
-                "oxygen": ds['dissolved_oxygen'].values if 'dissolved_oxygen' in ds else None,
+                "oxygen": oxygen_data,
                 "cdom": ds['CDOM'].values if 'CDOM' in ds else None,
                 "chlorophyll": ds['chlorophyll'].values if 'chlorophyll' in ds else None,
                 "density": ds['density'].values if 'density' in ds else None,
