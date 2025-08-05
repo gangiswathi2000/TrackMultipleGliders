@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import plotly.express as px
-from VisualizeMultipleGliders.models import ScientificData,Glider,ComputerData
+from VisualizeMultipleGliders.models import Glider, Glider_Research_Data
 import pandas as pd
 import numpy as np
 from django.http import JsonResponse
@@ -16,7 +16,8 @@ def remove_nan(obj):
     if isinstance(obj, list):
         return [remove_nan(x) for x in obj]
     return obj
-@csrf_exempt
+
+
 def plot_glider_data(request):
     variables_units={'temperature': '°C', 'salinity': 'PSU', 'oxygen': 'ml/l', 'dep':'m'}
     colorscales_range={'temperature': [6,12]}
@@ -44,7 +45,8 @@ def plot_glider_data(request):
                 x=x_axis,
                 y=y_axis,  
                 color=color,  
-                color_continuous_scale='Jet',
+                color_continuous_scale='thermal',
+                template='plotly_white',
                 range_color=scale,
                 title=title,
                 hover_data=[x_axis,y_axis,color]
@@ -65,7 +67,7 @@ def plot_glider_data(request):
             return JsonResponse({'plot_html': f"<p>Error: {str(e)}</p>"})
 def glider_data_to_display(request):
     data = list(
-        ScientificData.objects
+        Glider_Research_Data.objects
         .values('glider__glider_id','glider__startOfCoverage',
             'glider__endOfCoverage','precise_time', 'precise_lat', 'precise_lon', 'depth','temperature', 'oxygen','salinity')
     )

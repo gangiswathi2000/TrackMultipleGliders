@@ -1,26 +1,38 @@
 from django.core.management.base import BaseCommand
-from VisualizeMultipleGliders.models import Glider, ScientificData, ComputerData
+from VisualizeMultipleGliders.models import Glider, Glider_Research_Data
 import xarray as xr
 import pandas as pd
 import os
 from datetime import datetime
-
+ 
 class Command(BaseCommand):
-
+    var_precision_cnt={'salinity':3, 'pressure':2, 'latitude':5, 'longitude':5, 'oxygen':3, 'precise_lat': 5, 'precise_lon':5}
     def add_arguments(self, parser):
         parser.add_argument('files', nargs='+', type=str)
-
+    
+    def handle_precision(self, ds):
+        var=['temperature', 'depth','latitude','longitude','salinity', 'oxygen','pressure']
+        Actual_var=['temperature', 'depth']
+        for variable in Actual_var:
+            resolution=float(ds[variable].attrs['resolution'])
+            decimals=abs(int(f'{resolution:e}'.split('e')[-1]))
+            self.var_precision_cnt[variable]=decimals
+    def round_values(self, df, var_precision_cnt):
+        for var, decimals in var_precision_cnt.items():
+            if decimals is not None and var in df:
+                df[var] = df[var].astype('float64').round(decimals)
+ 
     def handle(self, *args, **options):
         for file_path in options['files']:
             self.stdout.write(self.style.NOTICE(f"Reading file: {file_path}"))
-
+ 
             if not os.path.exists(file_path):
                 self.stdout.write(self.style.ERROR(f" File not found: {file_path}"))
                 continue
-
+ 
             ds = xr.open_dataset(file_path)
+            self.handle_precision(ds)
             glider_type= ds.attrs['platform_type']
-           
             glider_id = ds.attrs.get("id")
             dateCreated = ds.attrs.get("date_created")
             summary= ds.attrs.get("summary")
@@ -30,7 +42,7 @@ class Command(BaseCommand):
             endOfCoverage=ds.attrs.get("time_coverage_end")
             institution = ds.attrs.get("institution")
             source_file = os.path.basename(file_path)
-
+ 
             glider_obj, _ = Glider.objects.get_or_create(
                 glider_id=glider_id,
                 defaults={
@@ -68,11 +80,11 @@ class Command(BaseCommand):
                 "precise_lon": ds['precise_lon'].values if 'precise_lon' in ds else None,
                 "precise_time": pd.to_datetime(ds['precise_time'].values).tz_localize("UTC") if 'precise_time' in ds else None,
             })
-
+            self.round_values(df, self.var_precision_cnt)
             self.stdout.write(self.style.NOTICE(f"Inserting {len(df)} rows..."))
-
+ 
             for _, row in df.iterrows():
-                ScientificData.objects.create(
+                Glider_Research_Data.objects.create(
                     glider=glider_obj,
                     latitude=row.latitude,
                     longitude=row.longitude,
@@ -85,14 +97,11 @@ class Command(BaseCommand):
                     density=row.density,
                     precise_lat=row.precise_lat,
                     precise_lon=row.precise_lon,
-                    precise_time=row.precise_time
-                )
-                ComputerData.objects.create(
-                    glider=glider_obj,
+                    precise_time=row.precise_time,
                     pitch=row.pitch,
                     roll=row.roll,
                     u=row.u,
                     v=row.v
                 )
-
+ 
             self.stdout.write(self.style.SUCCESS(f"Successfully imported {file_path}"))

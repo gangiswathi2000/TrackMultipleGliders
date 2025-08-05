@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <meta name="csrf-token" content="{{ csrf_token }}" />
     <meta charset="UTF-8" />
     <title>Gliders Tracker</title>
     <link
@@ -155,8 +156,11 @@
           }
         })
         .catch((err) => console.error("Load error:", err));
-
+      function getCSRFToken() {
+        return document.querySelector('[name="csrf-token"]').content;
+      }
       function plotGliderData() {
+        const csrfToken = getCSRFToken();
         if (!selectedGliderId || !selectedTrack) return;
 
         const xAxis = document.getElementById("x-axis").value;
@@ -165,7 +169,11 @@
 
         fetch("/plots/", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+
           body: JSON.stringify({
             glider_id: selectedGliderId,
             track: selectedTrack,

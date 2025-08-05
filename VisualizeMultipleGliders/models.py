@@ -15,8 +15,8 @@ class Glider(models.Model):
         return self.glider_id
 
 
-class ScientificData(models.Model):
-    glider = models.ForeignKey(Glider, on_delete=models.CASCADE, related_name='scientific_data')
+class Glider_Research_Data(models.Model):
+    glider = models.ForeignKey(Glider, on_delete=models.CASCADE, related_name='Glider_Research_Data')
     latitude = models.FloatField()
     longitude = models.FloatField()
     depth = models.FloatField()
@@ -29,16 +29,11 @@ class ScientificData(models.Model):
     precise_lat = models.FloatField(null=True, blank=True)
     precise_lon = models.FloatField(null=True, blank=True)
     precise_time = models.DateTimeField(null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.glider.glider_id} | {self.precise_time}"
-
-class ComputerData(models.Model):
-    glider = models.ForeignKey(Glider, on_delete=models.CASCADE, related_name='computer_data')
     pitch = models.FloatField(null=True, blank=True)
     roll = models.FloatField(null=True, blank=True)
     u = models.FloatField(null=True, blank=True)
     v = models.FloatField(null=True, blank=True)
-   
+
     def __str__(self):
-        return f"{self.glider.glider_id} | {self.pitch} (Computer Data)"
+        return f"{self.glider.glider_id} | {self.precise_time}"
+
