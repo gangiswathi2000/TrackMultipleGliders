@@ -19,7 +19,7 @@ def remove_nan(obj):
 
 
 def plot_glider_data(request):
-    variables_units={'temperature': '°C', 'salinity': 'PSU', 'oxygen': 'ml/l', 'dep':'m'}
+    variables_units={'temperature': '°C', 'salinity': 'PSU', 'oxygen': 'ml/l', 'depth':'m'}
     colorscales_range={'temperature': [6,12]}
     if request.method == 'POST':
         try:
